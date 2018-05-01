@@ -4,10 +4,13 @@ import express from 'express';
 import mongoose from 'mongoose';
 import logger from './logger';
 import placeRoutes from '../route/place-router';
+import loggerMiddleware from './logger-middelware';
+import errorMiddleware from './error-middleware';
 
 const app = express();
 let server = null;
 
+app.use(loggerMiddleware);
 app.use(placeRoutes);
 
 app.all('*', (request, response) => {

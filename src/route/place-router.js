@@ -2,6 +2,7 @@
 
 import { Router } from 'express';
 import bodyParser from 'body-parser';
+import HttpErrors from 'http-errors';
 import Place from '../model/place';
 import logger from '../lib/logger';
 
@@ -9,47 +10,49 @@ const jsonParser = bodyParser.json();
 
 const placeRouter = new Router();
 
-placeRouter.post('/api/places', jsonParser, (request, response) => {
-  logger.log(logger.INFO, 'POST - processing a request');
+placeRouter.post('/api/places', jsonParser, (request, response, next) => {
+  // logger.log(logger.INFO, 'POST - processing a request');
   if (!request.body.city) {
     logger.log(logger.INFO, 'Responding with a 400 error code');
-    return response.sendStatus(400);
+    return next(new HttpErrors(400, 'title is required'));
   }
  
   return new Place(request.body).save()
-    .then((place) => {
+    .then((note) => {
       logger.log(logger.INFO, 'POST - responding with a 200 status code');
       return response.json(place);
     })
-    .catch((error) => {
-      logger.log(logger.ERROR, '__POST_ERROR__');
-      logger.log(logger.ERROR, error);
-      return response.sendStatus(500);
+    .catch((next) => {
     });
 });
 
-placeRouter.get('/api/places/:id', (request, response) => {
-  logger.log(logger.INFO, 'GET - processing a request');
+placeRouter.put('/api/notes:id', jsonParser, (request, response, next => {
+  const options = { runValidators: true, new: true };
+
+  return Place.findByIdAndUpdate(request.params.id, request.body, options)
+  .then((updatedPlace) => {
+    if (!updatedPlace) {
+      logger.log(logger.INFO, 'GET - responding with a 404 status code = (!note)');
+      return next(new HttpErrors(404, 'note not found'));
+    }
+    logger.log(logger.INFO, 'GET - responding with a 200 status code');
+    return response.json(updatedPlace);
+  })
+  .catch(next);
+}),
+
+placeRouter.get('/api/places/:id', (request, response, next) => {
   return Place.findById(request.params.id)
     .then((place) => {
       if (!place) {
         logger.log(logger.INFO, 'GET - responding with a 404 status code - (!place)');
-        return response.sendStatus(404);
+        return next (new HttpErrors(404, 'note not found'));
       }
-      logger.log(logger.INFO, 'GET - responding with a 202 status code');
+      logger.log(logger.INFO, 'GET - responding with a 200 status code');
       return response.json(place);
     })
-    .catch((error) => {
-      if (error.message.toLowerCase().indexOf('cast to objectid failed') > -1) {
-        logger.log(logger.INFO, 'GET - responding with a 404 status code - objectId');
-        logger.log(logger.VERBOSE, `Could not parse the specific object id ${request.params.id}`);
-        return response.sendStatus(404);
-      }
-      logger.log(logger.ERROR, '__GET_ERROR__ Returning a 500 status code');
-      logger.log(logger.ERROR, error);
-      return response.sendStatus(500);
-    });
-});
+    .catch(next);
+  }),
 
 placeRouter.delete('/api/places/:id', (request, response) => {
   logger.log(logger.INFO, 'DELETE - deleting a place route');
@@ -61,7 +64,7 @@ placeRouter.delete('/api/places/:id', (request, response) => {
       }
       logger.log(logger.INFO, 'DELETE');
       return response.json(place);
-    });
+    })
 });
 
 export default placeRouter;

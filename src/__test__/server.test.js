@@ -7,7 +7,7 @@ import { startServer, stopServer } from '../lib/server';
 
 const apiURL = `http://localhost:${process.env.PORT}/api/places`;
 
-const createPlaceMock = () => {
+const pCreatePlaceMock = () => {
   return new Place({
     city: faker.lorem.words(10),
     state: faker.lorem.words(25),
@@ -47,7 +47,8 @@ describe('/api/places', () => {
   describe('GET /api/places', () => {
     test('should respond with 200 if there are no errors', () => {
       let placeToTest = null; 
-      return createPlaceMock() 
+
+      return pCreatePlaceMock() 
         .then((place) => {
           placeToTest = place;
           return superagent.get(`${apiURL}/${place._id}`);
@@ -65,5 +66,23 @@ describe('/api/places', () => {
           expect(response.status).toEqual(404);
         });
     });
+  });
+});
+
+describe('PUT /api/places', () => {
+  test('should update a note and return a 200 status code', () => {
+    let placeToUpdate = null;
+    return pCreatePlaceMock()
+      .then((placeMock) => {
+        placeToUpdate = placeMock;
+        return superagent.put(`${apiURL}/${placeMock._id}`)
+          .send({ city: 'Seattle' });
+      })
+      .then((response) => {
+        expect(response.status).toEqual(200);
+        expect(response.body.city).toEqual('Seattle');
+        expect(response.body.state).toEqual(placeToUpdate.state);
+        expect(response.body._id).toEqual(placeToUpdate._id.toString());
+      });
   });
 });

@@ -9,8 +9,8 @@ const apiURL = `http://localhost:${process.env.PORT}/api/places`;
 
 const pCreatePlaceMock = () => {
   return new Place({
-    city: faker.lorem.words(10),
-    state: faker.lorem.words(25),
+    city: faker.lorem.words(2),
+    state: faker.lorem.words(1),
   }).save();
 };
 
@@ -67,22 +67,41 @@ describe('/api/places', () => {
         });
     });
   });
-});
 
-describe('PUT /api/places', () => {
-  test('should update a note and return a 200 status code', () => {
-    let placeToUpdate = null;
-    return pCreatePlaceMock()
-      .then((placeMock) => {
-        placeToUpdate = placeMock;
-        return superagent.put(`${apiURL}/${placeMock._id}`)
-          .send({ city: 'Seattle' });
-      })
-      .then((response) => {
-        expect(response.status).toEqual(200);
-        expect(response.body.city).toEqual('Seattle');
-        expect(response.body.state).toEqual(placeToUpdate.state);
-        expect(response.body._id).toEqual(placeToUpdate._id.toString());
-      });
+  describe('PUT /api/places', () => {
+    test('should update a note and return a 200 status code', () => {
+      let placeToUpdate = null;
+      return pCreatePlaceMock()
+        .then((placeMock) => {
+          placeToUpdate = placeMock;
+          return superagent
+            .put(`${apiURL}/${placeMock._id}`)
+            .send({ city: 'Seattle' })
+            .then((response) => {
+              expect(response.status).toEqual(200);
+              expect(response.body.city).toEqual('Seattle');
+              expect(response.body.state).toEqual(placeToUpdate.state);
+              expect(response.body._id).toEqual(placeToUpdate._id.toString());
+            });
+        });
+    });
+  });
+  describe('DELETE /api/places/:id', () => {
+    test('should respond with a 204 error if there is no content in the body', () => {
+      return pCreatePlaceMock()
+        .then((place) => { // eslint-disable-line no-unused-vars
+          return superagent.delete('{apiUrl}/{place._id}');
+        })
+        .then((response) => {
+          expect(response.status).toEqual(204);
+        });
+    });
+    test('should respond with 404 error if there is no resource with that id', () => {
+      return superagent.delete(`${apiURL}/InvalidId`)
+        .then(Promise.reject) 
+        .catch((response) => {
+          expect(response.status).toEqual(404);
+        });
+    });
   });
 });

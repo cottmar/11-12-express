@@ -6,7 +6,6 @@ const placeSchema = mongoose.Schema({
   city: {
     type: String,
     required: true,
-    unique: true,
   },
   state: {
     type: String,
@@ -18,4 +17,5 @@ const placeSchema = mongoose.Schema({
     default: () => Date(),
   },
 });
+
 export default mongoose.model('place', placeSchema);
